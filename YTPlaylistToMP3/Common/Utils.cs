@@ -9,8 +9,10 @@ namespace YTPlaylistToMP3.Common
 {
     public class Utils
     {
+        public const string youtubeApiUrl = "https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyAo1OGaye6UmKHYLt0dh5aBfimcZPZ_Ow0&part=snippet,contentDetails&maxResults=50&playlistId=";
         public const string listUrlregex = "list=.+[a-zA-Z0-9]$";
-        public  const string ffmpegPath = @"C:\Program Files\FFMPEG\bin\ffmpeg.exe";
+        public const string ffmpegPath = @"C:\Program Files\FFMPEG\bin\ffmpeg.exe";
+        public const int noOfThreads = 8;
 
         public static bool IsInternetConnection()
         {

@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using Newtonsoft.Json;
 using YTPlaylistToMP3.Common;
@@ -20,6 +22,8 @@ namespace YTPlaylistToMP3.Donwload
         private DirectoryInfo _dirInfo;
         private List<PlaylistItem> _playlistItems;
         private ProgressBar _pbMain;
+        private int _noOfDownloadedSongs = 0;
+        private float _percentPerItem;
 
         public Download(string playlistId, TextBlock mainWindowTb, DirectoryInfo dirInfo, ProgressBar pbMain)
         {
@@ -46,13 +50,40 @@ namespace YTPlaylistToMP3.Donwload
         #region Background Worker Events
         private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            int percentPerItem = Convert.ToInt32(Math.Floor(100m / _playlistItems.Count));
-            int itemCounter = 0;
+            _percentPerItem = Convert.ToInt32(Math.Floor(100m / _playlistItems.Count));
+            int filesPerThread = _playlistItems.Count / Utils.noOfThreads;
+            int noOfFilesLeft = _playlistItems.Count - (filesPerThread * Utils.noOfThreads);
 
-            foreach (PlaylistItem item in _playlistItems)
+            Task[] tasks = new Task[Utils.noOfThreads];
+
+            for (int i = 0; i < Utils.noOfThreads; i++)
+            {
+                int additionalFilePerThread = 0;
+
+                if (noOfFilesLeft > 0)
+                {
+                    additionalFilePerThread = 1;
+                    noOfFilesLeft--;
+                }
+
+                List<PlaylistItem> threadList = new List<PlaylistItem>(_playlistItems.Take(filesPerThread + additionalFilePerThread));
+                _playlistItems.RemoveRange(0, filesPerThread + additionalFilePerThread);
+
+                Task task = Task.Factory.StartNew(() => DownloadFiles(threadList));
+                tasks[i] = task;
+            }
+
+            Task.WaitAll(tasks);
+
+            _backgroundWorker.ReportProgress(100);
+        }
+
+        private void DownloadFiles(List<PlaylistItem> playlistItems)
+        {
+            foreach (PlaylistItem item in playlistItems)
             {
                 try
-                {         
+                {
                     string link = "https://youtube.com/watch?v=" + item.ContentDetails.VideoId;
 
                     var videoInfos = YoutubeExtractor.DownloadUrlResolver.GetDownloadUrls(link);
@@ -64,20 +95,31 @@ namespace YTPlaylistToMP3.Donwload
                     string cleanedUpTitle = CleanUpTitle(info.Title); //scanning for forbidden chars
 
                     string filepath = Path.Combine(_dirInfo.FullName, $"{cleanedUpTitle}{info.VideoExtension}");
+                    string mp3FilePath = Path.Combine(_dirInfo.FullName, $"{cleanedUpTitle}.mp3");
+
+                    if (File.Exists(mp3FilePath))
+                    {
+                        WriteToConsole($"File Exists: {mp3FilePath}");
+                        _noOfDownloadedSongs++;
+
+                        _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedSongs * _percentPerItem));
+                        continue;
+                    }
 
                     var youtubeExtractor = new YoutubeExtractor.VideoDownloader(info, filepath);
 
                     WriteToConsole($"Downloading: {cleanedUpTitle}");
                     try
                     {
-                        youtubeExtractor.Execute();              
-                        itemCounter++;
+                        youtubeExtractor.Execute();
+                        _noOfDownloadedSongs++;
+
+                        _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedSongs * _percentPerItem) - Convert.ToInt32(_percentPerItem / 2));
 
                         ExtractMp3FromMp4($"{_dirInfo.FullName}\\{cleanedUpTitle}");
+                       
                         File.Delete($"{_dirInfo.FullName}\\{cleanedUpTitle}.mp4");
-
-                        WriteToConsole($" OK", false);
-                        _backgroundWorker.ReportProgress (itemCounter * percentPerItem);
+                        _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedSongs * _percentPerItem));    
                     }
                     catch (Exception)
                     {
@@ -89,8 +131,6 @@ namespace YTPlaylistToMP3.Donwload
                     WriteToConsole($"Error: {ex.Message}");
                 }
             }
-
-            _backgroundWorker.ReportProgress(100);
         }
 
         private void ExtractMp3FromMp4(string mp4Path)
@@ -124,7 +164,7 @@ namespace YTPlaylistToMP3.Donwload
                 ConsoleMessage consoleMessage = (ConsoleMessage)e.UserState;
                 _console.Write(consoleMessage.Message, consoleMessage.IsNewLine);
             }
-            else if(e.ProgressPercentage > 0)
+            else if (e.ProgressPercentage > 0)
             {
                 _pbMain.Value = e.ProgressPercentage;
             }
@@ -134,12 +174,11 @@ namespace YTPlaylistToMP3.Donwload
         {
             if (e.Error != null)
             {
-                _console.Write($"Error in Process : {e.Error}");
-
+                _console.Write($"Error : {e.Error}");
             }
             else
             {
-                _console.Write($"Operation Completed : {e.Result}");
+                _console.Write($"Work finished!");
             }
         }
         #endregion
@@ -174,7 +213,7 @@ namespace YTPlaylistToMP3.Donwload
             void ReplaceChar(string character)
             {
                 if (title.Contains(character))
-                   title = title.Replace(character, "");
+                    title = title.Replace(character, "");
             }
             title = title.Replace(" ", "_");
             title = title.Replace("__", "_");
@@ -186,6 +225,7 @@ namespace YTPlaylistToMP3.Donwload
         private bool IsApiResponseOk()
         {
             WriteToConsole(Strings.CheckingApiResponse, false);
+            _backgroundWorker.ReportProgress(1);
 
             APIResponse apiresponse = null;
 
@@ -195,7 +235,7 @@ namespace YTPlaylistToMP3.Donwload
                 {
                     _playlistItems = new List<PlaylistItem>();
 
-                    var uri = new Uri("https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyAo1OGaye6UmKHYLt0dh5aBfimcZPZ_Ow0&part=snippet,contentDetails&maxResults=50&playlistId=" + this._playlist.Id + (apiresponse == null ? "" : $"&pageToken={apiresponse.NextPageToken}"));
+                    var uri = new Uri(Utils.youtubeApiUrl + this._playlist.Id + (apiresponse == null ? "" : $"&pageToken={apiresponse.NextPageToken}"));
                     var client = new HttpClient();
                     var response = client.GetStringAsync(uri);
                     apiresponse = JsonConvert.DeserializeObject<APIResponse>(response.Result);
@@ -204,6 +244,7 @@ namespace YTPlaylistToMP3.Donwload
                 while (apiresponse.NextPageTokenExists);
 
                 WriteToConsole($"{Strings.ResponseOK} { _playlistItems.Count} {Strings.ItemsFound}.");
+                _backgroundWorker.ReportProgress(2);
                 return true;
             }
             catch (Exception)

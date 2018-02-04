@@ -16,7 +16,7 @@ namespace YTPlaylistToMP3.Donwload
             this.feedbackBlock = feedbackBlock;
         }
 
-        public void Write(string message, bool isNewLine = false)
+        public void Write(string message, bool isNewLine = true)
         {
             if(isNewLine)
                 this.feedbackBlock.Text += $"\n{message}";
