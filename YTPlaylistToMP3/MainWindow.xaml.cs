@@ -14,7 +14,8 @@ namespace YTPlaylistToMP3
     {
         public MainWindow()
         {
-            InitializeComponent();   
+            InitializeComponent();
+            RbMp3.IsChecked = true;
         }
 
         private void ButtonDownload_OnClick(object sender, RoutedEventArgs e)
@@ -30,7 +31,9 @@ namespace YTPlaylistToMP3
                     string ytPlaylistId = ytPlaylistUrl.Substring(ytPlaylistUrl.IndexOf("list=") + "list=".Length);
                     string savePath = TxtSavePath.Text.Trim();
 
-                    Download download = new Download(ytPlaylistId, TbDownloadFeedback, new DirectoryInfo(savePath), pbStatus);
+                    MediaType mediaType = (bool)RbMp3.IsChecked ? MediaType.Mp3 : MediaType.Mp4;
+
+                    Download download = new Download(ytPlaylistId, TbDownloadFeedback, new DirectoryInfo(savePath), pbStatus, mediaType);
                     download.DownloadItems();
                     
                 }

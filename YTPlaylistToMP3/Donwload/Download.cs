@@ -22,15 +22,17 @@ namespace YTPlaylistToMP3.Donwload
         private DirectoryInfo _dirInfo;
         private List<PlaylistItem> _playlistItems;
         private ProgressBar _pbMain;
-        private int _noOfDownloadedSongs = 0;
+        private int _noOfDownloadedtems = 0;
         private float _percentPerItem;
+        private MediaType _mediaType;
 
-        public Download(string playlistId, TextBlock mainWindowTb, DirectoryInfo dirInfo, ProgressBar pbMain)
+        public Download(string playlistId, TextBlock mainWindowTb, DirectoryInfo dirInfo, ProgressBar pbMain, MediaType mediaType)
         {
             _playlist = new Playlist(playlistId);
             _console = new Console(mainWindowTb);
             _dirInfo = dirInfo;
             _pbMain = pbMain;
+            _mediaType = mediaType;
 
             SetBackgroundWorker();
         }
@@ -100,9 +102,9 @@ namespace YTPlaylistToMP3.Donwload
                     if (File.Exists(mp3FilePath))
                     {
                         WriteToConsole($"File Exists: {mp3FilePath}");
-                        _noOfDownloadedSongs++;
+                        _noOfDownloadedtems++;
 
-                        _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedSongs * _percentPerItem));
+                        _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedtems * _percentPerItem));
                         continue;
                     }
 
@@ -112,14 +114,23 @@ namespace YTPlaylistToMP3.Donwload
                     try
                     {
                         youtubeExtractor.Execute();
-                        _noOfDownloadedSongs++;
+                        _noOfDownloadedtems++;
 
-                        _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedSongs * _percentPerItem) - Convert.ToInt32(_percentPerItem / 2));
+                        if(_mediaType == MediaType.Mp4)
+                        {
+                            _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedtems * _percentPerItem));
+                        }
+                        else if(_mediaType == MediaType.Mp3)
+                        {
+                            _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedtems * _percentPerItem) - Convert.ToInt32(_percentPerItem / 2));
 
-                        ExtractMp3FromMp4($"{_dirInfo.FullName}\\{cleanedUpTitle}");
-                       
-                        File.Delete($"{_dirInfo.FullName}\\{cleanedUpTitle}.mp4");
-                        _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedSongs * _percentPerItem));    
+                            ExtractMp3FromMp4($"{_dirInfo.FullName}\\{cleanedUpTitle}");
+
+                            File.Delete($"{_dirInfo.FullName}\\{cleanedUpTitle}.mp4");
+                            _backgroundWorker.ReportProgress(Convert.ToInt32(_noOfDownloadedtems * _percentPerItem));                         
+                        }
+
+                        WriteToConsole($"Downloading {cleanedUpTitle} DONE!");
                     }
                     catch (Exception)
                     {

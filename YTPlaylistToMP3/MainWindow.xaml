@@ -8,21 +8,23 @@
         Title="MainWindow" Height="467.507" Width="766.583">
     <Grid Margin="0,133,2,-21">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="83*"/>
-            <ColumnDefinition Width="167*"/>
-            <ColumnDefinition Width="403*"/>
+            <ColumnDefinition Width="96"/>
+            <ColumnDefinition Width="194*"/>
+            <ColumnDefinition Width="467*"/>
         </Grid.ColumnDefinitions>
         <Label Margin="16,-121,0,400" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="124">Youtube PLaylist URL:
         </Label>
-        <TextBox Text="https://www.youtube.com/playlist?list=PL5qDG-5PiyYwhL-XbQYZonFIqzibkO7aQ" Name="TxtYTPlaylistUrl" Margin="0,-121,8,0" Height="27" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" HorizontalAlignment="Right" Width="574"></TextBox>
+        <TextBox Text="https://www.youtube.com/playlist?list=PL5qDG-5PiyYwhL-XbQYZonFIqzibkO7aQ" Name="TxtYTPlaylistUrl" Margin="79,-121,8,0" Height="27" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1"/>
         <Label Margin="16,-93,0,372" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="107">Save directory path:</Label>
-        <TextBox Text="C:\Users\Sale\Downloads\TestYTDownload" Name="TxtSavePath" Margin="0,-90,8,0" Height="27" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" HorizontalAlignment="Right" Width="574" />
-        <Button Name="ButtonDownload" Margin="16,-59,10,0" Click="ButtonDownload_OnClick" Height="28" VerticalAlignment="Top" Grid.ColumnSpan="3">
+        <TextBox Text="C:\Users\Sale\Downloads\TestYTDownload" Name="TxtSavePath" Margin="79,-90,8,0" Height="27" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" />
+        <Button Name="ButtonDownload" Margin="74,-58,0,0" Click="ButtonDownload_OnClick" Height="28" VerticalAlignment="Top" Grid.Column="2" HorizontalAlignment="Left" Width="141">
             <TextBlock >DOWNLOAD PLAYLIST!</TextBlock>
         </Button>
         <ScrollViewer Grid.ColumnSpan="3" Margin="21,-26,10,60">
             <TextBlock Name="TbDownloadFeedback" Grid.ColumnSpan="3"/>
         </ScrollViewer>
         <ProgressBar Grid.ColumnSpan="3" Margin="16,0,8,32" Minimum ="0" Maximum="100" Name="pbStatus" Height="23" VerticalAlignment="Bottom"/>
+        <RadioButton Name="RbMp3" Content="Mp3" HorizontalAlignment="Left" Margin="16,-59,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" GroupName="MediaType"/>
+        <RadioButton Name="RbMp4" Content="Mp4" HorizontalAlignment="Left" Margin="71,-59,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" GroupName="MediaType"/>
     </Grid>
 </Window>

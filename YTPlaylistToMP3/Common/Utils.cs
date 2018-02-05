@@ -29,6 +29,13 @@ namespace YTPlaylistToMP3.Common
                 req = null;
                 return false;
             }
-        }
+        } 
+    }
+
+    public enum MediaType
+    {
+        Undefined,
+        Mp3,
+        Mp4
     }
 }

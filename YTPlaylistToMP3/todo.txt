@@ -1,1 +1,2 @@
 - omoguciti download jednog fajla
+- ima neki bug da sve stane i to je to
